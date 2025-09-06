@@ -7,13 +7,13 @@ def load_matrices(filename):
     total_lines = len(lines)
     N = total_lines//2
     
-    # Read matrix A (first N lines)
+    #A (first N lines)
     A = []
     for i in range(N):
         row = list(map(float, lines[i].split()))
         A.append(row)
     
-    # Read matrix B (remaining lines)
+    #B (remaining lines)
     B = []
     for i in range(N, total_lines):
         row = list(map(float, lines[i].split()))
@@ -22,18 +22,7 @@ def load_matrices(filename):
     return A, B
 
 def viterbi(observations, A, B, start_probs=None):
-    """
-    Viterbi algorithm to find most likely sequence of hidden states
-    
-    Args:
-        observations: sequence of observed symbols (0-indexed)
-        A: transition probability matrix (N x N)
-        B: emission probability matrix (N x M)  
-        start_probs: initial state probabilities (if None, uniform distribution)
-    
-    Returns:
-        Most likely sequence of states
-    """
+    #implementation of viterbi algorithm (brute force is impossible)
     N = len(A)
     T = len(observations)
     
@@ -41,16 +30,14 @@ def viterbi(observations, A, B, start_probs=None):
         return []
     
     if start_probs is None:
-        # For HMM problems, typically we start from state 0 (Start state)
-        # But we need to transition from Start to actual states
-        start_probs = [0.0] * N
-        start_probs[0] = 1.0  # Start at state 0
+        print("Probability of going from state 0 to all other states not provided!!")
+        return None
     
-    # Initialize Viterbi tables
+    #initialize tables
     viterbi_prob = [[0.0 for _ in range(T)] for _ in range(N)]
     viterbi_path = [[0 for _ in range(T)] for _ in range(N)]
     
-    # Initialization step (t=0)
+    #initialization t=0
     for state in range(N):
         if observations[0] < len(B[state]):
             viterbi_prob[state][0] = start_probs[state] * B[state][observations[0]]
@@ -58,7 +45,7 @@ def viterbi(observations, A, B, start_probs=None):
             viterbi_prob[state][0] = 0.0
         viterbi_path[state][0] = 0
     
-    # Recursion step (t=1 to T-1)
+    #recursion t=1 to T-1
     for t in range(1, T):
         for state in range(N):
             max_prob = 0.0
@@ -76,7 +63,6 @@ def viterbi(observations, A, B, start_probs=None):
                 viterbi_prob[state][t] = 0.0
             viterbi_path[state][t] = max_prev_state
     
-    # Termination step - find the most likely final state
     max_final_prob = 0.0
     best_final_state = 0
     
@@ -85,7 +71,7 @@ def viterbi(observations, A, B, start_probs=None):
             max_final_prob = viterbi_prob[state][T-1]
             best_final_state = state
     
-    # Backtrack to find the most likely path
+    #backtrack
     best_path = [0] * T
     best_path[T-1] = best_final_state
     
@@ -95,8 +81,6 @@ def viterbi(observations, A, B, start_probs=None):
     return best_path
 
 def solve_predictions():
-    """Main function to solve prediction problems"""
-    print("Starting prediction process...")
     
     try:
         with open("input.txt", 'r') as f:
@@ -109,10 +93,7 @@ def solve_predictions():
     dataset_num = int(lines[0])
     num_test_cases = int(lines[1])
     
-    print(f"Using dataset {dataset_num}")
-    print(f"Number of test cases: {num_test_cases}")
-    
-    # Load appropriate HMM matrices
+    #load HMM matrices
     if dataset_num == 1:
         A, B = load_matrices("sol-1-1.txt")
     elif dataset_num == 2:
@@ -125,7 +106,6 @@ def solve_predictions():
     line_idx = 2
     
     for test_case in range(num_test_cases):
-        print(f"\nProcessing test case {test_case + 1}/{num_test_cases}")
         
         if line_idx >= len(lines):
             print(f"Error: Not enough lines in input file for test case {test_case + 1}")
@@ -146,11 +126,9 @@ def solve_predictions():
         
         print(f"Observations: {observations}")
         
-        # Validate observations are within range
         max_obs = len(B[0]) if B and B[0] else 0
         if any(obs >= max_obs for obs in observations):
             print(f"Warning: Some observations are out of range (max allowed: {max_obs - 1})")
-            # Filter out invalid observations
             observations = [obs for obs in observations if obs < max_obs]
         
         if not observations:
@@ -159,15 +137,9 @@ def solve_predictions():
             continue
         
         try:
-            # Find most likely state sequence using Viterbi
             best_states = viterbi(observations, A, B, A[0])
             print(f"Best state sequence: {best_states}")
-            
-            # Format result according to problem requirements
-            # For HMM prediction problems, we usually want the actual hidden states
-            # not including the start state (state 0) in the output
             if best_states:
-                # Remove start state (0) if it appears at the beginning
                 if len(best_states) > 0 and best_states[0] == 0:
                     result_states = best_states[1:] if len(best_states) > 1 else []
                 else:
@@ -176,23 +148,18 @@ def solve_predictions():
                 if result_states:
                     results.append(' '.join(map(str, result_states)))
                 else:
-                    results.append("0")  # Default if no valid states
+                    results.append("0")
             else:
                 results.append("0")
                 
         except Exception as e:
             print(f"Error processing test case {test_case + 1}: {e}")
-            results.append("0")  # Default fallback
-    
-    # Write results to output file
+            results.append("0")
+
     try:
         with open("sol-2.txt", 'w') as f:
             for result in results:
                 f.write(result + '\n')
-        print(f"\nResults written to sol-2.txt")
-        print("Results:")
-        for i, result in enumerate(results):
-            print(f"Test case {i+1}: {result}")
     except Exception as e:
         print(f"Error writing results: {e}")
 
